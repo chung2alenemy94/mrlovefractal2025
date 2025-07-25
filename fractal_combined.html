@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>프랙탈 생성기</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #282c34; /* 다크 모드 배경 */
+            color: #abb2bf; /* 다크 모드 텍스트 색상 */
+            font-family: Arial, sans-serif;
+            
+        }
+        h1 {
+            margin-bottom: 20px;
+            color: #61afef; /* 다크 모드 제목 색상 */
+        }
+        canvas {
+            border: 1px solid #5c6370;
+            background-color: #21252b; /* 다크 모드 캔버스 배경 */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        .main-container {
+            display: flex;
+            gap: 20px;
+            width: 100%;
+            max-width: 1200px;
+            justify-content: center;
+        }
+        .controls-panel {
+            display: flex;
+            flex-direction: column; /* 세로 정렬 */
+            gap: 15px;
+            padding: 15px;
+            background-color: #3a404a;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            width: 250px; /* 컨트롤 패널 너비 고정 */
+            align-items: stretch; /* 항목을 꽉 채우도록 */
+        }
+        .controls-panel label,
+        .controls-panel select,
+        .controls-panel input[type="range"],
+        .controls-panel input[type="color"],
+        .controls-panel input[type="checkbox"] {
+            color: #abb2bf;
+            background-color: #4b525f;
+            border: 1px solid #5c6370;
+            border-radius: 4px;
+            padding: 5px 8px;
+        }
+        .controls-panel select {
+            padding-right: 25px; /* 드롭다운 화살표 공간 확보 */
+        }
+        .controls-panel input[type="range"] {
+            width: 120px;
+            -webkit-appearance: none;
+            height: 8px;
+            border-radius: 5px;
+            background: #5c6370;
+            outline: none;
+            opacity: 0.7;
+            transition: opacity .2s;
+        }
+        .controls-panel input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #61afef;
+            cursor: pointer;
+        }
+        .controls-panel input[type="range"]::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #61afef;
+            cursor: pointer;
+        }
+        .help-button {
+            background-color: #61afef;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            margin-top: 20px;
+            transition: background-color 0.3s ease;
+        }
+        .help-button:hover {
+            background-color: #528bff;
+        }
+        .help-section {
+            background-color: #3a404a;
+            color: #abb2bf;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            max-width: 800px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            display: none; /* 기본적으로 숨김 */
+        }
+        .help-section h2 {
+            color: #61afef;
+            margin-top: 0;
+        }
+        .help-section p {
+            margin-bottom: 10px;
+        }
+
+        /* 탭 스타일 */
+        .tabs {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+            background-color: #3a404a;
+            border-radius: 8px;
+            padding: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .tab-button {
+            background-color: #3a404a;
+            color: #abb2bf;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            border-radius: 5px;
+            margin: 0 5px;
+        }
+        .tab-button:hover {
+            background-color: #4b525f;
+        }
+        .tab-button.active {
+            background-color: #61afef;
+            color: white;
+        }
+        .tab-content {
+            display: none;
+            padding: 20px;
+            background-color: #3a404a;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            max-width: 900px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .tab-content h1, .tab-content h2 {
+            color: #61afef;
+            margin-top: 0;
+        }
+        .tab-content ul {
+            list-style-type: disc;
+            margin-left: 20px;
+        }
+        .tab-content li {
+            margin-bottom: 5px;
+        }
+
+
+        /* 초기 로드 시 첫 번째 탭 콘텐츠만 보이도록 설정 */
+        #fractalExperience {
+            display: block;
+        }
+        #aboutFractals {
+            display: none;
+        }
+        #helpSection {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="tabs">
+        <button class="tab-button active" onclick="openTab(event, 'fractalExperience')">프랙탈 체험</button>
+        <button class="tab-button" onclick="openTab(event, 'aboutFractals')">프랙탈 정보</button>
+        <button class="tab-button" onclick="openTab(event, 'helpSection')">도움말</button>
+    </div>
+
+    <div id="fractalExperience" class="tab-content active">
+        <h1>프랙탈 생성기</h1>
+        <p id="fractalDescription" style="text-align: center; max-width: 800px; margin-bottom: 20px; line-height: 1.5;"></p>
+
+        <div class="main-container">
+            <div class="controls-panel">
+                <div>
+                    <label for="fractalSelect">프랙탈 선택:</label>
+                    <select id="fractalSelect">
+                        <optgroup label="각도 조절 가능">
+                            <option value="tree">프랙탈 트리</option>
+                            <option value="pythagoras">피타고라스 트리</option>
+                        </optgroup>
+                        <optgroup label="각도 조절 불가능">
+                            <option value="sierpinski">시에르핀스키 삼각형</option>
+                            <option value="koch">코흐 눈송이</option>
+                            <option value="dragon">드래곤 커브</option>
+                        </optgroup>
+                        <optgroup label="집합 프랙탈">
+                            <option value="mandelbrot">만델브로트 집합</option>
+                            <option value="julia">줄리아 집합</option>
+                        </optgroup>
+                    </select>
+                </div>
+                <div id="fractalControls">
+                    <!-- 프랙탈별 컨트롤이 여기에 동적으로 추가됩니다 -->
+                </div>
+                <div>
+                    <label for="treeColor">색상:</label>
+                    <input type="color" id="treeColor" value="#8B4513">
+                </div>
+            </div>
+
+            <canvas id="fractalCanvas"></canvas>
+        </div>
+    </div>
+
+    <div id="aboutFractals" class="tab-content">
+        <h1>프랙탈이란?</h1>
+        <p>프랙탈(Fractal)은 작은 부분이 전체와 비슷한 기하학적 형태로, 자기 유사성(self-similarity)을 특징으로 합니다. 이는 자연 현상에서 흔히 발견되며, 해안선, 구름, 나무, 혈관 등 다양한 곳에서 프랙탈 구조를 찾아볼 수 있습니다.</p>
+        
+        <h2>프랙탈의 특징</h2>
+        <ul>
+            <li><b>자기 유사성:</b> 어떤 부분을 확대해도 전체와 비슷한 모양이 반복됩니다.</li>
+            <li><b>무한한 복잡성:</b> 아무리 확대해도 새로운 세부 구조가 계속 나타납니다.</li>
+            <li><b>비정수 차원:</b> 일반적인 유클리드 기하학의 차원(1차원 선, 2차원 면, 3차원 입체)과는 다른 비정수 차원을 가집니다.</li>
+        </ul>
+
+        <h2>프랙탈의 활용</h2>
+        <ul>
+            <li><b>컴퓨터 그래픽스:</b> 자연 경관(산, 나무, 구름) 생성, 특수 효과 등에 활용됩니다.</li>
+            <li><b>과학 및 공학:</b> 안테나 설계, 이미지 압축, 의학 영상 분석, 주식 시장 분석 등 다양한 분야에서 응용됩니다.</li>
+            <li><b>예술 및 디자인:</b> 독특하고 아름다운 시각적 패턴을 생성하는 데 사용됩니다.</li>
+        </ul>
+
+        <h2>다양한 프랙탈</h2>
+        <h3>프랙탈 트리 (Fractal Tree)</h3>
+        <p>프랙탈 트리는 자연의 나무와 유사하게 자기 유사성을 가지는 프랙탈 구조입니다. 하나의 줄기에서 여러 개의 가지가 뻗어 나가고, 그 가지에서 다시 작은 가지들이 뻗어 나가는 과정이 반복됩니다. 각 가지는 이전 가지의 축소된 형태로, 무한히 반복될수록 실제 나무와 같은 복잡하고 아름다운 형태를 만들어냅니다. 깊이, 각도, 길이 비율 등의 매개변수를 조절하여 다양한 형태의 트리를 생성할 수 있습니다.</p>
+
+        <h3>시에르핀스키 삼각형 (Sierpinski Triangle)</h3>
+        <p>시에르핀스키 삼각형은 정삼각형에서 시작하여 중앙의 역삼각형을 제거하고, 남은 세 개의 작은 정삼각형에 대해 동일한 과정을 반복하여 만들어지는 프랙탈입니다. 이 과정이 무한히 반복되면, 삼각형 내부에 무한히 많은 구멍이 생기면서도 전체적인 형태는 유지되는 독특한 구조를 가집니다. 이는 자기 유사성과 비정수 차원의 좋은 예시입니다.</p>
+
+        <h3>만델브로트 집합 (Mandelbrot Set)</h3>
+        <p>만델브로트 집합은 복소평면에서 특정 조건을 만족하는 점들의 집합으로, 매우 복잡하고 아름다운 경계를 가집니다. 간단한 반복 함수(z = z^2 + c)를 통해 생성되며, 집합의 경계는 무한히 복잡하고 아름다운 패턴을 보여줍니다. 확대할수록 새로운 프랙탈 구조가 끊임없이 나타나는 것이 특징이며, '프랙탈의 제왕'이라고도 불립니다.</p>
+
+        <h3>줄리아 집합 (Julia Set)</h3>
+        <p>줄리아 집합은 만델브로트 집합과 밀접한 관련이 있는 프랙탈입니다. 만델브로트 집합이 복소수 c의 변화에 따라 집합의 형태가 결정되는 반면, 줄리아 집합은 고정된 복소수 c에 대해 초기값 z0의 변화에 따라 발산 여부를 판단하여 그려집니다. c 값에 따라 매우 다양하고 아름다운 형태를 가지며, 만델브로트 집합의 각 점에 해당하는 줄리아 집합이 존재한다고 볼 수 있습니다.</p>
+
+        <h3>코흐 눈송이 (Koch Snowflake)</h3>
+        <p>코흐 눈송이는 정삼각형의 각 변을 3등분하고, 가운데 부분을 한 변으로 하는 또 다른 정삼각형을 바깥쪽으로 붙이는 과정을 무한히 반복하여 만들어지는 프랙탈입니다. 이 과정이 반복될수록 둘레는 무한히 길어지지만, 넓이는 유한한 값을 가지는 역설적인 특징을 보여줍니다. 눈송이와 같은 아름다운 형태를 가지며, 해안선의 복잡성을 설명하는 데 비유되기도 합니다.</p>
+    </div>
+
+    <div id="helpSection" class="tab-content">
+        <h1>도움말</h1>
+        <p>이 프랙탈 생성기 사용에 대한 도움말입니다.</p>
+        <h2>프랙탈 선택</h2>
+        <p>좌측 상단의 드롭다운 메뉴에서 다양한 프랙탈을 선택할 수 있습니다.</p>
+        <h2>컨트롤 패널</h2>
+        <p>선택된 프랙탈에 따라 깊이, 각도, 확대/축소 등의 매개변수를 조절할 수 있는 컨트롤이 나타납니다.</p>
+        <ul>
+            <li><b>깊이:</b> 프랙탈의 반복 횟수를 조절합니다. 값이 높을수록 더 복잡한 프랙탈이 생성됩니다.</li>
+            <li><b>각도:</b> 프랙탈 트리의 가지가 뻗어 나가는 각도를 조절합니다.</li>
+            <li><b>확대 축소:</b> 프랙탈의 크기를 조절합니다. 마우스 휠을 사용해서도 확대/축소할 수 있습니다.</li>
+            <li><b>색상:</b> 프랙탈의 색상을 변경합니다.</li>
+        </ul>
+        <h2>마우스 조작</h2>
+        <ul>
+            <li><b>휠 스크롤:</b> 만델브로트 집합, 줄리아 집합, 피타고라스 트리, 시에르핀스키 삼각형, 코흐 눈송이, 드래곤 커브의 확대/축소에 사용됩니다.</li>
+            <li><b>드래그:</b> 만델브로트 집합과 줄리아 집합의 경우, 마우스 드래그를 통해 화면을 이동할 수 있습니다.</li>
+        </ul>
+    </div>
+
+    <script>
+        const workerScript = `
+// fractalWorker.js
+
+// HSL to RGB conversion helper function
+// H, S, L values are between 0 and 1
+// Returns an array [r, g, b] where r, g, b are between 0 and 255
+function hslToRgb(h, s, l) {
+    let r, g, b;
+
+    if (s === 0) {
+        r = g = b = l; // achromatic
+    } else {
+        const hue2rgb = (p, q, t) => {
+            if (t < 0) t += 1;
+            if (t > 1) t -= 1;
+            if (t < 1 / 6) return p + (q - p) * 6 * t;
+            if (t < 1 / 2) return q;
+            if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+            return p;
+        };
+
+        const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+        const p = 2 * l - q;
+        r = hue2rgb(p, q, h + 1 / 3);
+        g = hue2rgb(p, q, h);
+        b = hue2rgb(p, q, h - 1 / 3);
+    }
+
+    return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
+}
+
+self.onmessage = function(e) {
+    const { fractalType, width, height, params } = e.data;
+    const pixels = new Uint8ClampedArray(width * height * 4);
+
+    if (fractalType === 'mandelbrot') {
+        const { MAX_ITERATIONS, ZOOM, centerX, centerY } = params;
+
+        for (let pixelY = 0; pixelY < height; pixelY++) {
+            for (let pixelX = 0; pixelX < width; pixelX++) {
+                const x = (pixelX - width / 2) / (width / (3.5 * ZOOM)) + centerX;
+                const y = (pixelY - height / 2) / (height / (2 * ZOOM)) + centerY;
+
+                let a = x;
+                let b = y;
+                let n = 0;
+
+                while (n < MAX_ITERATIONS) {
+                    const aa = a * a;
+                    const bb = b * b;
+                    if (aa + bb > 4) break;
+                    const twoab = 2 * a * b;
+                    a = aa - bb + x;
+                    b = twoab + y;
+                    n++;
+                }
+
+                let r, g, b_val;
+                if (n === MAX_ITERATIONS) {
+                    r = 0; g = 0; b_val = 0; // Black
+                } else {
+                    const hue = (n * 360 / MAX_ITERATIONS) / 360; // H between 0 and 1
+                    [r, g, b_val] = hslToRgb(hue, 1, 0.5); // S=1, L=0.5
+                }
+
+                const index = (pixelY * width + pixelX) * 4;
+                pixels[index] = r;
+                pixels[index + 1] = g;
+                pixels[index + 2] = b_val;
+                pixels[index + 3] = 255; // Alpha
+            }
+        }
+    } else if (fractalType === 'julia') {
+        const { MAX_ITERATIONS, ZOOM, cReal, cImag } = params;
+
+        for (let pixelY = 0; pixelY < height; pixelY++) {
+            for (let pixelX = 0; pixelX < width; pixelX++) {
+                const x0 = (pixelX - width / 2) / (width / (4 * ZOOM));
+                const y0 = (pixelY - height / 2) / (height / (4 * ZOOM));
+
+                let x = x0;
+                let y = y0;
+                let n = 0;
+
+                while (n < MAX_ITERATIONS) {
+                    const aa = x * x;
+                    const bb = y * y;
+                    if (aa + bb > 4) break;
+                    const twoab = 2 * x * y;
+                    x = aa - bb + cReal;
+                    y = twoab + cImag;
+                    n++;
+                }
+
+                let r, g, b_val;
+                if (n === MAX_ITERATIONS) {
+                    r = 0; g = 0; b_val = 0; // Black
+                } else {
+                    const hue = (n * 360 / MAX_ITERATIONS) / 360; // H between 0 and 1
+                    [r, g, b_val] = hslToRgb(hue, 1, 0.5); // S=1, L=0.5
+                }
+
+                const index = (pixelY * width + pixelX) * 4;
+                pixels[index] = r;
+                pixels[index + 1] = g;
+                pixels[index + 2] = b_val;
+                pixels[index + 3] = 255; // Alpha
+            }
+        }
+    }
+
+    self.postMessage({ pixels: pixels, width: width, height: height }, [pixels.buffer]);
+};
+        `;
+        const workerBlob = new Blob([workerScript], { type: 'application/javascript' });
+        const workerUrl = URL.createObjectURL(workerBlob);
+        const fractalWorker = new Worker(workerUrl);
+
+        // 탭 전환 기능
+        function openTab(evt, tabName) {
+            var i, tabcontent, tablinks;
+            tabcontent = document.getElementsByClassName("tab-content");
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].style.display = "none";
+            }
+            tablinks = document.getElementsByClassName("tab-button");
+            for (i = 0; i < tablinks.length; i++) {
+                tablinks[i].className = tablinks[i].className.replace(" active", "");
+            }
+            document.getElementById(tabName).style.display = "block";
+            evt.currentTarget.className += " active";
+        }
+
+        // 초기 로드 시 '프랙탈 체험' 탭 활성화
+        document.addEventListener('DOMContentLoaded', (event) => {
+            document.querySelector('.tab-button').click();
+            updateControls(); // 이 부분을 DOMContentLoaded 안으로 이동
+        });
+
+        const canvas = document.getElementById('fractalCanvas');
+        const ctx = canvas.getContext('2d');
+        const fractalSelect = document.getElementById('fractalSelect');
+        const fractalControls = document.getElementById('fractalControls');
+        const fractalDescription = document.getElementById('fractalDescription');
+
+        let currentFractal = 'tree';
+        let treeDepth = 5;
+        let treeAngle = 30;
+        let treeLengthRatio = 0.7;
+        let treeColor = '#8B4513';
+
+        let sierpinskiDepth = 5;
+        let sierpinskiZoom = 1;
+
+        let mandelbrotIterations = 50;
+        let mandelbrotZoom = 1;
+        let mandelbrotCenterX = -0.5; // 초기 중심 X
+        let mandelbrotCenterY = 0;    // 초기 중심 Y
+
+        // 줄리아 집합을 위한 변수
+        let juliaIterations = 100;
+        let juliaZoom = 1;
+        let juliaRealC = -0.7; // 줄리아 집합의 고정된 c 값 실수부
+        let juliaImagC = 0.27015; // 줄리아 집합의 고정된 c 값 허수부
+
+        let kochDepth = 5;
+        let kochZoom = 1;
+
+        let pythagorasDepth = 6;
+        let pythagorasAngle = 45;
+        let pythagorasZoom = 1; // 피타고라스 트리 확대/축소 변수 추가
+
+        let dragonDepth = 15;
+        let dragonZoom = 1;
+
+        let isDragging = false;
+        let lastX, lastY;
+
+        canvas.width = 800;
+        canvas.height = 600;
+
+        fractalWorker.onerror = function(e) {
+            fractalDescription.textContent = `워커 스크립트 오류: ${e.message}`;
+            e.preventDefault();
+        };
+
+        fractalWorker.onmessage = function(e) {
+            const { pixels, width, height } = e.data;
+            const imageData = new ImageData(pixels, width, height);
+            ctx.putImageData(imageData, 0, 0);
+        };
+
+        function drawFractal() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#21252b';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            switch (currentFractal) {
+                case 'tree':
+                    drawTree(canvas.width / 2, canvas.height, treeLengthRatio * 150, -90, treeDepth);
+                    fractalDescription.textContent = "프랙탈 트리는 자기 유사성을 가진 나무 모양의 프랙탈입니다. 가지가 반복적으로 분기하며 전체 나무의 형태를 이룹니다.";
+                    break;
+                case 'sierpinski':
+                    const size = Math.min(canvas.width, canvas.height) * 0.9 * sierpinskiZoom;
+                    const h = size * Math.sqrt(3) / 2;
+                    drawSierpinski(canvas.width / 2 - size / 2, canvas.height / 2 + h / 3, size, sierpinskiDepth);
+                    fractalDescription.textContent = "시에르핀스키 삼각형은 정삼각형에서 중앙의 역삼각형을 계속해서 제거해나가는 방식으로 만들어지는 프랙탈입니다. 무한히 반복되는 구멍이 특징입니다.";
+                    break;
+                case 'mandelbrot':
+                    // 워커에게 계산 요청
+                    fractalWorker.postMessage({
+                        fractalType: 'mandelbrot',
+                        width: canvas.width,
+                        height: canvas.height,
+                        params: {
+                            MAX_ITERATIONS: mandelbrotIterations,
+                            ZOOM: mandelbrotZoom,
+                            centerX: mandelbrotCenterX,
+                            centerY: mandelbrotCenterY
+                        }
+                    });
+                    fractalDescription.textContent = "만델브로트 집합은 복소평면에서 특정 조건을 만족하는 점들의 집합으로, 매우 복잡하고 아름다운 경계를 가집니다. 확대할수록 새로운 패턴이 드러납니다.";
+                    break;
+                case 'julia':
+                    // 워커에게 계산 요청
+                    fractalWorker.postMessage({
+                        fractalType: 'julia',
+                        width: canvas.width,
+                        height: canvas.height,
+                        params: {
+                            MAX_ITERATIONS: juliaIterations,
+                            ZOOM: juliaZoom,
+                            cReal: juliaRealC,
+                            cImag: juliaImagC
+                        }
+                    });
+                    fractalDescription.textContent = "줄리아 집합은 고정된 복소수 c에 대해 초기값 z0의 변화에 따라 발산 여부를 판단하여 그려지는 프랙탈입니다. 만델브로트 집합의 각 점에 해당하는 줄리아 집합이 존재합니다.";
+                    break;
+                case 'koch':
+                    drawKochSnowflake(canvas.width / 2, canvas.height / 2, canvas.width / 3.5 * kochZoom, kochDepth);
+                    fractalDescription.textContent = "코흐 눈송이는 정삼각형의 각 변을 3등분하고, 가운데 부분을 한 변으로 하는 또 다른 정삼각형을 붙이는 과정을 무한히 반복하여 만들어지는 프랙탈입니다.";
+                    break;
+                case 'pythagoras':
+                    ctx.translate(canvas.width / 2, canvas.height - 50);
+                    drawPythagorasTree(100 * pythagorasZoom, pythagorasDepth, pythagorasAngle);
+                    ctx.setTransform(1, 0, 0, 1, 0, 0); // 캔버스 변환 초기화
+                    fractalDescription.textContent = "피타고라스 트리는 정사각형 위에 두 개의 작은 정사각형을 붙여나가는 방식으로 만들어지는 프랙탈입니다. 각 단계에서 직각삼각형의 빗변에 해당하는 정사각형이 생성됩니다.";
+                    break;
+                case 'dragon':
+                    case 'dragon':
+                    ctx.translate(canvas.width / 2 - 100, canvas.height / 2);
+                    drawDragonCurve(200, dragonDepth, dragonZoom);
+                    ctx.setTransform(1, 0, 0, 1, 0, 0); // 캔버스 변환 초기화
+                    fractalDescription.textContent = "드래곤 커브는 종이를 접는 과정을 반복하여 만들어지는 프랙탈입니다. 매우 복잡하고 자기 유사적인 곡선 형태를 가집니다.";
+                    break;
+            }
+        }
+
+        function drawTree(startX, startY, length, angle, depth) {
+            if (depth === 0) return;
+
+            const endX = startX + length * Math.cos(angle * Math.PI / 180);
+            const endY = startY + length * Math.sin(angle * Math.PI / 180);
+
+            ctx.beginPath();
+            ctx.moveTo(startX, startY);
+            ctx.lineTo(endX, endY);
+            ctx.strokeStyle = treeColor;
+            ctx.lineWidth = depth / 2 + 0.5;
+            ctx.stroke();
+
+            drawTree(endX, endY, length * treeLengthRatio, angle + treeAngle, depth - 1);
+            drawTree(endX, endY, length * treeLengthRatio, angle - treeAngle, depth - 1);
+        }
+
+        function drawSierpinski(x, y, size, depth) {
+            if (depth === 0) {
+                ctx.fillStyle = '#61afef';
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+                ctx.lineTo(x + size, y);
+                ctx.lineTo(x + size / 2, y - (Math.sqrt(3) / 2) * size);
+                ctx.closePath();
+                ctx.fill();
+                return;
+            }
+
+            const h = (Math.sqrt(3) / 2) * size;
+            drawSierpinski(x, y, size / 2, depth - 1);
+            drawSierpinski(x + size / 2, y, size / 2, depth - 1);
+            drawSierpinski(x + size / 4, y - h / 2, size / 2, depth - 1);
+        }
+
+        function drawKochSnowflake(x, y, size, depth) {
+            const angle = 120 * Math.PI / 180;
+            const p1 = [x + size * Math.cos(0), y + size * Math.sin(0)];
+            const p2 = [x + size * Math.cos(angle), y + size * Math.sin(angle)];
+            const p3 = [x + size * Math.cos(2 * angle), y + size * Math.sin(2 * angle)];
+
+            ctx.strokeStyle = '#61afef';
+            ctx.lineWidth = 1;
+
+            drawKochSegment(p1[0], p1[1], p2[0], p2[1], depth);
+            drawKochSegment(p2[0], p2[1], p3[0], p3[1], depth);
+            drawKochSegment(p3[0], p3[1], p1[0], p1[1], depth);
+        }
+
+        function drawKochSegment(x1, y1, x5, y5, depth) {
+            if (depth === 0) {
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x5, y5);
+                ctx.stroke();
+                return;
+            }
+
+            const deltaX = x5 - x1;
+            const deltaY = y5 - y1;
+
+            const x2 = x1 + deltaX / 3;
+            const y2 = y1 + deltaY / 3;
+
+            const x3 = x1 + deltaX / 2 - deltaY * Math.sqrt(3) / 6;
+            const y3 = y1 + deltaY / 2 + deltaX * Math.sqrt(3) / 6;
+
+            const x4 = x1 + 2 * deltaX / 3;
+            const y4 = y1 + 2 * deltaY / 3;
+
+            drawKochSegment(x1, y1, x2, y2, depth - 1);
+            drawKochSegment(x2, y2, x3, y3, depth - 1);
+            drawKochSegment(x3, y3, x4, y4, depth - 1);
+            drawKochSegment(x4, y4, x5, y5, depth - 1);
+        }
+
+        function drawPythagorasTree(size, depth, angle) {
+            if (depth === 0) return;
+
+            ctx.fillStyle = '#4CAF50'; // Green for leaves
+            ctx.fillRect(0, 0, size, -size); // Draw square
+
+            ctx.save();
+            ctx.translate(0, -size);
+            ctx.rotate(-angle * Math.PI / 180);
+            drawPythagorasTree(size * Math.cos(angle * Math.PI / 180), depth - 1, angle);
+            ctx.restore();
+
+            ctx.save();
+            ctx.translate(size * Math.cos(angle * Math.PI / 180), -size * Math.sin(angle * Math.PI / 180));
+            ctx.rotate((90 - angle) * Math.PI / 180);
+            drawPythagorasTree(size * Math.sin(angle * Math.PI / 180), depth - 1, angle);
+            ctx.restore();
+        }
+
+        function drawDragonCurve(length, depth, zoom) {
+            let path = [[0, 0], [length * zoom, 0]];
+            let newPath = [];
+
+            for (let i = 0; i < depth; i++) {
+                newPath = [path[0]];
+                for (let j = 0; j < path.length - 1; j++) {
+                    const p1 = path[j];
+                    const p2 = path[j + 1];
+
+                    const midX = (p1[0] + p2[0]) / 2;
+                    const midY = (p1[1] + p2[1]) / 2;
+
+                    const dx = p2[0] - p1[0];
+                    const dy = p2[1] - p1[1];
+
+                    // Rotate 90 degrees clockwise for the new point
+                    const newX = midX + dy / 2;
+                    const newY = midY - dx / 2;
+
+                    newPath.push([newX, newY]);
+                    newPath.push(p2);
+                }
+                path = newPath;
+            }
+
+            ctx.strokeStyle = '#FFD700'; // Gold color
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(path[0][0], path[0][1]);
+            for (let i = 1; i < path.length; i++) {
+                ctx.lineTo(path[i][0], path[i][1]);
+            }
+            ctx.stroke();
+        }
+
+        function updateControls() {
+            fractalControls.innerHTML = '';
+            const treeColorControl = document.getElementById('treeColor');
+            if (treeColorControl) {
+                treeColor = treeColorControl.value;
+            }
+
+            switch (currentFractal) {
+                case 'tree':
+                    fractalControls.innerHTML = `
+                        <div>
+                            <label for="treeDepth">깊이:</label>
+                            <input type="range" id="treeDepth" min="1" max="10" value="${treeDepth}">
+                        </div>
+                        <div>
+                            <label for="treeAngle">각도:</label>
+                            <input type="range" id="treeAngle" min="0" max="90" value="${treeAngle}">
+                        </div>
+                        <div>
+                            <label for="treeLengthRatio">확대 축소:</label>
+                            <input type="range" id="treeLengthRatio" min="0.1" max="0.9" step="0.05" value="${treeLengthRatio}">
+                        </div>
+                    `;
+                    document.getElementById('treeDepth').addEventListener('input', (e) => { treeDepth = parseInt(e.target.value); drawFractal(); });
+                    document.getElementById('treeAngle').addEventListener('input', (e) => { treeAngle = parseInt(e.target.value); drawFractal(); });
+                    document.getElementById('treeLengthRatio').addEventListener('input', (e) => { treeLengthRatio = parseFloat(e.target.value); drawFractal(); });
+                    break;
+                case 'sierpinski':
+                    fractalControls.innerHTML = `
+                        <div>
+                            <label for="sierpinskiDepth">깊이:</label>
+                            <input type="range" id="sierpinskiDepth" min="1" max="8" value="${sierpinskiDepth}">
+                        </div>
+                        <div>
+                            <label for="sierpinskiZoom">확대 축소:</label>
+                            <input type="range" id="sierpinskiZoom" min="0.1" max="5" step="0.1" value="${sierpinskiZoom}">
+                        </div>
+                    `;
+                    document.getElementById('sierpinskiDepth').addEventListener('input', (e) => { sierpinskiDepth = parseInt(e.target.value); drawFractal(); });
+                    document.getElementById('sierpinskiZoom').addEventListener('input', (e) => { sierpinskiZoom = parseFloat(e.target.value); drawFractal(); });
+                    break;
+                case 'mandelbrot':
+                    fractalControls.innerHTML = `
+                        <div>
+                            <label for="mandelbrotIterations">반복 횟수:</label>
+                            <input type="range" id="mandelbrotIterations" min="10" max="200" value="${mandelbrotIterations}">
+                        </div>
+                        <div>
+                            <label for="mandelbrotZoom">확대:</label>
+                            <input type="range" id="mandelbrotZoom" min="0.1" max="10" step="0.1" value="${mandelbrotZoom}">
+                        </div>
+                        <div>
+                            <label for="mandelbrotCenterX">중심 X:</label>
+                            <input type="range" id="mandelbrotCenterX" min="-2.5" max="1.5" step="0.01" value="${mandelbrotCenterX}">
+                        </div>
+                        <div>
+                            <label for="mandelbrotCenterY">중심 Y:</label>
+                            <input type="range" id="mandelbrotCenterY" min="-2" max="2" step="0.01" value="${mandelbrotCenterY}">
+                        </div>
+                        <div id="mandelbrotFormulaDisplay" style="margin-top: 10px; font-weight: bold;"></div>
+                        <p style="font-size: 0.9em; color: #888; margin-top: 5px;">중심 X, Y는 만델브로트 집합을 그릴 복소평면의 중심 좌표입니다. 일반적으로 X는 -2.5에서 1.5, Y는 -2에서 2 사이의 값을 사용합니다.</p>
+                    `;
+                    document.getElementById('mandelbrotIterations').addEventListener('input', (e) => { mandelbrotIterations = parseInt(e.target.value); drawFractal(); });
+                    document.getElementById('mandelbrotZoom').addEventListener('input', (e) => { mandelbrotZoom = parseFloat(e.target.value); drawFractal(); });
+                    document.getElementById('mandelbrotCenterX').addEventListener('input', (e) => { mandelbrotCenterX = parseFloat(e.target.value); drawFractal(); });
+                    document.getElementById('mandelbrotCenterY').addEventListener('input', (e) => { mandelbrotCenterY = parseFloat(e.target.value); drawFractal(); });
+                    break;
+                case 'julia':
+                    fractalControls.innerHTML = `
+                        <div>
+                            <label for="juliaIterations">반복 횟수:</label>
+                            <input type="range" id="juliaIterations" min="10" max="200" value="${juliaIterations}">
+                        </div>
+                        <div>
+                            <label for="juliaZoom">확대:</label>
+                            <input type="range" id="juliaZoom" min="0.1" max="10" step="0.1" value="${juliaZoom}">
+                        </div>
+                        <div>
+                            <label for="juliaRealC">고정 c (실수부):</label>
+                            <input type="range" id="juliaRealC" min="-2" max="2" step="0.001" value="${juliaRealC}">
+                        </div>
+                        <div>
+                            <label for="juliaImagC">고정 c (허수부):</label>
+                            <input type="range" id="juliaImagC" min="-2" max="2" step="0.001" value="${juliaImagC}">
+                        </div>
+                        <div id="juliaFormulaDisplay" style="margin-top: 10px; font-weight: bold;"></div>
+                        <p style="font-size: 0.9em; color: #888; margin-top: 5px;">고정 c 값은 줄리아 집합의 형태를 결정하는 중요한 요소입니다. 일반적으로 실수부는 -2에서 2, 허수부는 -2에서 2 사이의 값을 사용합니다.</p>
+                    `;
+                    document.getElementById('juliaIterations').addEventListener('input', (e) => { juliaIterations = parseInt(e.target.value); drawFractal(); });
+                    document.getElementById('juliaZoom').addEventListener('input', (e) => { juliaZoom = parseFloat(e.target.value); drawFractal(); });
+                    document.getElementById('juliaRealC').addEventListener('input', (e) => { juliaRealC = parseFloat(e.target.value); drawFractal(); });
+                    document.getElementById('juliaImagC').addEventListener('input', (e) => { juliaImagC = parseFloat(e.target.value); drawFractal(); });
+                    break;
+                case 'koch':
+                    fractalControls.innerHTML = `
+                        <div>
+                            <label for="kochDepth">깊이:</label>
+                            <input type="range" id="kochDepth" min="0" max="6" value="${kochDepth}">
+                        </div>
+                        <div>
+                            <label for="kochZoom">확대 축소:</label>
+                            <input type="range" id="kochZoom" min="0.1" max="5" step="0.1" value="${kochZoom}">
+                        </div>
+                    `;
+                    document.getElementById('kochDepth').addEventListener('input', (e) => { kochDepth = parseInt(e.target.value); drawFractal(); });
+                    document.getElementById('kochZoom').addEventListener('input', (e) => { kochZoom = parseFloat(e.target.value); drawFractal(); });
+                    break;
+                case 'pythagoras':
+                    fractalControls.innerHTML = `
+                        <div>
+                            <label for="pythagorasDepth">깊이:</label>
+                            <input type="range" id="pythagorasDepth" min="1" max="10" value="${pythagorasDepth}">
+                        </div>
+                        <div>
+                            <label for="pythagorasAngle">각도:</label>
+                            <input type="range" id="pythagorasAngle" min="1" max="89" value="${pythagorasAngle}">
+                        </div>
+                        <div>
+                            <label for="pythagorasZoom">확대 축소:</label>
+                            <input type="range" id="pythagorasZoom" min="0.1" max="5" step="0.1" value="${pythagorasZoom}">
+                        </div>
+                    `;
+                    document.getElementById('pythagorasDepth').addEventListener('input', (e) => { pythagorasDepth = parseInt(e.target.value); drawFractal(); });
+                    document.getElementById('pythagorasAngle').addEventListener('input', (e) => { pythagorasAngle = parseInt(e.target.value); drawFractal(); });
+                    document.getElementById('pythagorasZoom').addEventListener('input', (e) => { pythagorasZoom = parseFloat(e.target.value); drawFractal(); });
+                    break;
+                case 'dragon':
+                    // 깊이 컨트롤
+                    let depthDiv = document.createElement('div');
+                    let depthLabel = document.createElement('label');
+                    depthLabel.setAttribute('for', 'dragonDepth');
+                    depthLabel.textContent = '깊이:';
+                    let depthInput = document.createElement('input');
+                    depthInput.setAttribute('type', 'range');
+                    depthInput.setAttribute('id', 'dragonDepth');
+                    depthInput.setAttribute('min', '1');
+                    depthInput.setAttribute('max', '20');
+                    depthInput.setAttribute('value', dragonDepth);
+                    depthInput.addEventListener('input', (e) => { dragonDepth = parseInt(e.target.value); drawFractal(); });
+                    depthDiv.appendChild(depthLabel);
+                    depthDiv.appendChild(depthInput);
+                    fractalControls.appendChild(depthDiv);
+
+                    // 확대 축소 컨트롤
+                    let zoomDiv = document.createElement('div');
+                    let zoomLabel = document.createElement('label');
+                    zoomLabel.setAttribute('for', 'dragonZoom');
+                    zoomLabel.textContent = '확대 축소:';
+                    let zoomInput = document.createElement('input');
+                    zoomInput.setAttribute('type', 'range');
+                    zoomInput.setAttribute('id', 'dragonZoom');
+                    zoomInput.setAttribute('min', '0.1');
+                    zoomInput.setAttribute('max', '5');
+                    zoomInput.setAttribute('step', '0.1');
+                    zoomInput.setAttribute('value', dragonZoom);
+                    zoomInput.addEventListener('input', (e) => { dragonZoom = parseFloat(e.target.value); drawFractal(); });
+                    zoomDiv.appendChild(zoomLabel);
+                    zoomDiv.appendChild(zoomInput);
+                    fractalControls.appendChild(zoomDiv);
+                    break;
+            }
+            drawFractal();
+        }
+
+        fractalSelect.addEventListener('change', (e) => {
+            currentFractal = e.target.value;
+            updateControls();
+        });
+
+        document.getElementById('treeColor').addEventListener('input', (e) => {
+            treeColor = e.target.value;
+            if (currentFractal === 'tree') {
+                drawFractal();
+            }
+        });
+
+        canvas.addEventListener('wheel', e => {
+            if (currentFractal !== 'mandelbrot' && currentFractal !== 'julia' && currentFractal !== 'pythagoras' && currentFractal !== 'sierpinski') return;
+            e.preventDefault();
+            const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9;
+            if (currentFractal === 'mandelbrot') {
+                mandelbrotZoom *= zoomFactor;
+            } else if (currentFractal === 'julia') {
+                juliaZoom *= zoomFactor;
+            } else if (currentFractal === 'pythagoras') {
+                pythagorasZoom *= zoomFactor;
+            } else if (currentFractal === 'sierpinski') {
+                sierpinskiZoom *= zoomFactor;
+            } else if (currentFractal === 'koch') {
+                kochZoom *= zoomFactor;
+            } else if (currentFractal === 'dragon') {
+                dragonZoom *= zoomFactor;
+            }
+            drawFractal();
+        });
+
+        canvas.addEventListener('mousedown', e => {
+            if (currentFractal !== 'mandelbrot' && currentFractal !== 'julia') return;
+            isDragging = true;
+            lastX = e.clientX;
+            lastY = e.clientY;
+        });
+
+        canvas.addEventListener('mousemove', e => {
+            if (!isDragging || (currentFractal !== 'mandelbrot' && currentFractal !== 'julia')) return;
+            const dx = (e.clientX - lastX) / (canvas.width * mandelbrotZoom);
+            const dy = (e.clientY - lastY) / (canvas.height * mandelbrotZoom);
+            if (currentFractal === 'mandelbrot') {
+                mandelbrotCenterX -= dx;
+                mandelbrotCenterY -= dy;
+            }
+            lastX = e.clientX;
+            lastY = e.clientY;
+            drawFractal();
+        });
+
+        canvas.addEventListener('mouseup', () => { isDragging = false; });
+        canvas.addEventListener('mouseleave', () => { isDragging = false; });
+    </script>
+</body>
+</html>
