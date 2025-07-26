@@ -116,6 +116,45 @@
             margin-bottom: 10px;
         }
 
+        /* 모바일 반응형 디자인 */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            h1 {
+                font-size: 1.5em;
+            }
+            .main-container {
+                flex-direction: column;
+                align-items: center;
+                gap: 15px;
+            }
+            .controls-panel {
+                width: 95%; /* 모바일 화면에 꽉 차도록 */
+                max-width: 400px; /* 너무 커지지 않도록 제한 */
+                padding: 10px;
+            }
+            canvas {
+                width: 95%; /* 모바일 화면에 꽉 차도록 */
+                height: auto; /* 비율 유지 */
+                max-width: 600px; /* 너무 커지지 않도록 제한 */
+            }
+            .tabs {
+                flex-wrap: wrap; /* 탭 버튼이 많을 경우 줄바꿈 */
+                justify-content: center;
+                padding: 5px;
+            }
+            .tab-button {
+                flex: 1 1 auto; /* 버튼이 유동적으로 너비 조절 */
+                margin: 5px;
+                padding: 8px 10px;
+                font-size: 0.9em;
+            }
+            .tab-content {
+                padding: 15px;
+            }
+        }
+
         /* 탭 스타일 */
         .tabs {
             display: flex;
@@ -352,12 +391,13 @@ self.onmessage = function(e) {
             }
         }
     } else if (fractalType === 'julia') {
-        const { MAX_ITERATIONS, ZOOM, cReal, cImag } = params;
+        const { MAX_ITERATIONS, ZOOM, cReal, cImag, centerX, centerY } = params; // centerX, centerY 추가
 
         for (let pixelY = 0; pixelY < height; pixelY++) {
             for (let pixelX = 0; pixelX < width; pixelX++) {
-                const x0 = (pixelX - width / 2) / (width / (4 * ZOOM));
-                const y0 = (pixelY - height / 2) / (height / (4 * ZOOM));
+                // centerX, centerY를 사용하여 좌표 변환
+                const x0 = (pixelX - width / 2) / (width / (4 * ZOOM)) + centerX;
+                const y0 = (pixelY - height / 2) / (height / (4 * ZOOM)) + centerY;
 
                 let x = x0;
                 let y = y0;
@@ -443,6 +483,8 @@ self.onmessage = function(e) {
         let juliaZoom = 1;
         let juliaRealC = -0.7; // 줄리아 집합의 고정된 c 값 실수부
         let juliaImagC = 0.27015; // 줄리아 집합의 고정된 c 값 허수부
+        let juliaCenterX = 0; // 줄리아 집합의 중심 X
+        let juliaCenterY = 0; // 줄리아 집합의 중심 Y
 
         let kochDepth = 5;
         let kochZoom = 1;
@@ -512,7 +554,9 @@ self.onmessage = function(e) {
                             MAX_ITERATIONS: juliaIterations,
                             ZOOM: juliaZoom,
                             cReal: juliaRealC,
-                            cImag: juliaImagC
+                            cImag: juliaImagC,
+                            centerX: juliaCenterX, // 추가
+                            centerY: juliaCenterY  // 추가
                         }
                     });
                     fractalDescription.textContent = "줄리아 집합은 고정된 복소수 c에 대해 초기값 z0의 변화에 따라 발산 여부를 판단하여 그려지는 프랙탈입니다. 만델브로트 집합의 각 점에 해당하는 줄리아 집합이 존재합니다.";
@@ -886,6 +930,75 @@ self.onmessage = function(e) {
 
         canvas.addEventListener('mouseup', () => { isDragging = false; });
         canvas.addEventListener('mouseleave', () => { isDragging = false; });
+
+        // 모바일 터치 이벤트 추가
+        let initialPinchDistance = null;
+
+        canvas.addEventListener('touchstart', e => {
+            if (e.touches.length === 2) {
+                // 두 손가락 터치 시 핀치 줌 시작
+                initialPinchDistance = Math.hypot(
+                    e.touches[1].clientX - e.touches[0].clientX,
+                    e.touches[1].clientY - e.touches[0].clientY
+                );
+            } else if (e.touches.length === 1) {
+                // 한 손가락 터치 시 드래그 시작
+                if (currentFractal !== 'mandelbrot' && currentFractal !== 'julia') return;
+                isDragging = true;
+                const touch = e.touches[0];
+                lastX = touch.clientX;
+                lastY = touch.clientY;
+            }
+            e.preventDefault(); // 기본 스크롤/줌 방지
+        });
+
+        canvas.addEventListener('touchmove', e => {
+            if (e.touches.length === 2) {
+                // 두 손가락 핀치 줌
+                if (initialPinchDistance === null) return; // 초기 거리 없으면 리턴
+                const currentPinchDistance = Math.hypot(
+                    e.touches[1].clientX - e.touches[0].clientX,
+                    e.touches[1].clientY - e.touches[0].clientY
+                );
+                const zoomFactor = currentPinchDistance / initialPinchDistance;
+
+                if (currentFractal === 'mandelbrot') {
+                    mandelbrotZoom *= zoomFactor;
+                } else if (currentFractal === 'julia') {
+                    juliaZoom *= zoomFactor;
+                } else if (currentFractal === 'pythagoras') {
+                    pythagorasZoom *= zoomFactor;
+                } else if (currentFractal === 'sierpinski') {
+                    sierpinskiZoom *= zoomFactor;
+                } else if (currentFractal === 'koch') {
+                    kochZoom *= zoomFactor;
+                } else if (currentFractal === 'dragon') {
+                    dragonZoom *= zoomFactor;
+                }
+                initialPinchDistance = currentPinchDistance; // 다음 이동을 위해 현재 거리 저장
+                drawFractal();
+            } else if (e.touches.length === 1) {
+                // 한 손가락 드래그
+                if (!isDragging || (currentFractal !== 'mandelbrot' && currentFractal !== 'julia')) return;
+                const touch = e.touches[0];
+                const dx = (touch.clientX - lastX) / (canvas.width * (currentFractal === 'mandelbrot' ? mandelbrotZoom : juliaZoom));
+                const dy = (touch.clientY - lastY) / (canvas.height * (currentFractal === 'mandelbrot' ? mandelbrotZoom : juliaZoom));
+                if (currentFractal === 'mandelbrot') {
+                    mandelbrotCenterX -= dx;
+                    mandelbrotCenterY -= dy;
+                } else if (currentFractal === 'julia') {
+                    juliaCenterX -= dx;
+                    juliaCenterY -= dy;
+                }
+                lastX = touch.clientX;
+                lastY = touch.clientY;
+                drawFractal();
+            }
+            e.preventDefault(); // 기본 스크롤/줌 방지
+        });
+
+        canvas.addEventListener('touchend', () => { isDragging = false; initialPinchDistance = null; });
+        canvas.addEventListener('touchcancel', () => { isDragging = false; initialPinchDistance = null; });
     </script>
 </body>
 </html>
