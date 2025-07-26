@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>프랙탈 생성기</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
     <style>
         body {
             display: flex;
@@ -12,146 +13,205 @@
             align-items: center;
             min-height: 100vh;
             margin: 0;
-            background-color: #282c34; /* 다크 모드 배경 */
-            color: #abb2bf; /* 다크 모드 텍스트 색상 */
-            font-family: Arial, sans-serif;
-            
+            background: linear-gradient(135deg, #282c34 0%, #1a1d22 100%); /* 미묘한 그라데이션 배경 */
+            color: #e0e0e0; /* 밝은 텍스트 색상 */
+            font-family: 'Roboto', Arial, sans-serif;
+            transition: background-color 0.3s ease; /* 부드러운 전환 효과 */
         }
         h1 {
             margin-bottom: 20px;
-            color: #61afef; /* 다크 모드 제목 색상 */
+            color: #61afef; /* 주 강조색 */
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); /* 제목 그림자 */
         }
         canvas {
-            border: 1px solid #5c6370;
-            background-color: #21252b; /* 다크 모드 캔버스 배경 */
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            border: 2px solid #4b525f;
+            background-color: #21252b; /* 캔버스 배경 */
         }
         .main-container {
             display: flex;
-            gap: 20px;
+            gap: 25px; /* 간격 증가 */
             width: 100%;
             max-width: 1200px;
             justify-content: center;
+            align-items: flex-start; /* 상단 정렬 */
         }
         .controls-panel {
             display: flex;
-            flex-direction: column; /* 세로 정렬 */
-            gap: 15px;
-            padding: 15px;
-            background-color: #3a404a;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            width: 250px; /* 컨트롤 패널 너비 고정 */
-            align-items: stretch; /* 항목을 꽉 채우도록 */
+            flex-direction: column;
+            gap: 20px; /* 간격 증가 */
+            padding: 20px; /* 패딩 증가 */
+            background-color: #3a404a; /* 패널 배경 */
+            width: 280px; /* 컨트롤 패널 너비 증가 */
+            align-items: stretch;
+            border: 1px solid #4b525f; /* 테두리 추가 */
         }
-        .controls-panel label,
+        .controls-panel label {
+            color: #c0c0c0; /* 라벨 색상 */
+            font-weight: 500; /* 폰트 두께 */
+            margin-bottom: 5px;
+            display: block;
+        }
         .controls-panel select,
         .controls-panel input[type="range"],
         .controls-panel input[type="color"],
         .controls-panel input[type="checkbox"] {
-            color: #abb2bf;
-            background-color: #4b525f;
+            color: #e0e0e0;
+            background-color: #4b525f; /* 입력 필드 배경 */
             border: 1px solid #5c6370;
-            border-radius: 4px;
-            padding: 5px 8px;
+            padding: 8px 10px;
+            transition: all 0.3s ease;
+        }
+        .controls-panel select:focus,
+        .controls-panel input[type="range"]:focus,
+        .controls-panel input[type="color"]:focus,
+        .controls-panel input[type="checkbox"]:focus {
+            border-color: #61afef; /* 포커스 시 강조색 */
+            box-shadow: 0 0 0 3px rgba(97, 175, 239, 0.3); /* 포커스 그림자 */
+            outline: none;
         }
         .controls-panel select {
-            padding-right: 25px; /* 드롭다운 화살표 공간 확보 */
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20256%20256%22%3E%3Cpath%20fill%3D%22%23abb2bf%22%20d%3D%22M208.5%2096.5L128%20177l-80.5-80.5%2011.3-11.3L128%20154.4l69.2-69.2z%22%2F%3E%3C%2Fsvg%3E');
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            background-size: 16px;
+            padding-right: 30px; /* 드롭다운 화살표 공간 확보 */
         }
         .controls-panel input[type="range"] {
-            width: 120px;
-            -webkit-appearance: none;
-            height: 8px;
-            border-radius: 5px;
-            background: #5c6370;
+            width: 100%; /* 너비 100%로 변경 */
+            height: 10px; /* 높이 증가 */
+            background: #5c6370; /* 트랙 색상 */
             outline: none;
-            opacity: 0.7;
+            opacity: 0.9;
             transition: opacity .2s;
         }
         .controls-panel input[type="range"]::-webkit-slider-thumb {
             -webkit-appearance: none;
             appearance: none;
-            width: 18px;
-            height: 18px;
+            width: 20px; /* 엄지 크기 증가 */
+            height: 20px;
             border-radius: 50%;
-            background: #61afef;
-            cursor: pointer;
+            background: #61afef; /* 엄지 색상 */
+            cursor: grab;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); /* 엄지 그림자 */
+            border: 2px solid #e0e0e0; /* 엄지 테두리 */
         }
         .controls-panel input[type="range"]::-moz-range-thumb {
-            width: 18px;
-            height: 18px;
+            width: 20px;
+            height: 20px;
             border-radius: 50%;
             background: #61afef;
-            cursor: pointer;
+            cursor: grab;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            border: 2px solid #e0e0e0;
+        }
+        .controls-panel input[type="range"]::-webkit-slider-thumb:active {
+            cursor: grabbing;
+        }
+        .controls-panel input[type="range"]::-moz-range-thumb:active {
+            cursor: grabbing;
         }
         .help-button {
             background-color: #61afef;
             color: white;
             border: none;
-            padding: 10px 15px;
-            border-radius: 5px;
+            padding: 12px 20px; /* 패딩 증가 */
             cursor: pointer;
-            font-size: 1em;
-            margin-top: 20px;
-            transition: background-color 0.3s ease;
+            font-size: 1.1em; /* 폰트 크기 증가 */
+            margin-top: 25px; /* 마진 증가 */
+            transition: background-color 0.3s ease, transform 0.2s ease; /* 전환 효과 추가 */
         }
         .help-button:hover {
             background-color: #528bff;
+            transform: translateY(-2px); /* 호버 시 약간 위로 이동 */
+        }
+        .help-button:active {
+            transform: translateY(0); /* 클릭 시 원래 위치로 */
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); /* 클릭 시 그림자 변경 */
         }
         .help-section {
             background-color: #3a404a;
-            color: #abb2bf;
-            padding: 20px;
-            border-radius: 8px;
-            margin-top: 20px;
+            color: #e0e0e0;
+            padding: 25px;
+            margin-top: 25px;
             max-width: 800px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            display: none; /* 기본적으로 숨김 */
+            display: none;
+            border: 1px solid #4b525f;
         }
         .help-section h2 {
             color: #61afef;
             margin-top: 0;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
         }
         .help-section p {
             margin-bottom: 10px;
+            line-height: 1.6;
         }
 
         /* 모바일 반응형 디자인 */
         @media (max-width: 768px) {
             body {
-                padding: 10px;
+                padding: 15px;
             }
             h1 {
-                font-size: 1.5em;
+                font-size: 1.8em;
             }
             .main-container {
                 flex-direction: column;
                 align-items: center;
-                gap: 15px;
+                gap: 20px;
             }
             .controls-panel {
                 width: 95%; /* 모바일 화면에 꽉 차도록 */
                 max-width: 400px; /* 너무 커지지 않도록 제한 */
-                padding: 10px;
+                padding: 10px; /* 패딩을 줄여 더 작게 */
+            }
+            .controls-panel label {
+                font-size: 0.9em; /* 라벨 폰트 크기 줄임 */
+            }
+            .controls-panel select,
+            .controls-panel input[type="range"],
+            .controls-panel input[type="color"],
+            .controls-panel input[type="checkbox"],
+            .controls-panel input[type="number"] {
+                padding: 6px 8px; /* 입력 필드 패딩 줄임 */
+                font-size: 0.9em; /* 입력 필드 폰트 크기 줄임 */
+            }
+            .controls-panel input[type="range"] {
+                height: 6px; /* 슬라이더 높이 줄임 */
+            }
+            .controls-panel input[type="range"]::-webkit-slider-thumb {
+                width: 16px; /* 슬라이더 엄지 크기 줄임 */
+                height: 16px;
+            }
+            .controls-panel input[type="range"]::-moz-range-thumb {
+                width: 16px;
+                height: 16px;
+            }
+            .controls-panel input[type="number"] {
+                width: 50px !important; /* 숫자 입력 필드 너비 줄임 */
+                margin-left: 5px !important; /* 마진 줄임 */
             }
             canvas {
-                width: 95%; /* 모바일 화면에 꽉 차도록 */
+                width: 100%; /* 모바일 화면에 꽉 차도록 */
                 height: auto; /* 비율 유지 */
                 max-width: 600px; /* 너무 커지지 않도록 제한 */
             }
             .tabs {
-                flex-wrap: wrap; /* 탭 버튼이 많을 경우 줄바꿈 */
+                flex-wrap: wrap;
                 justify-content: center;
-                padding: 5px;
+                padding: 8px;
             }
             .tab-button {
-                flex: 1 1 auto; /* 버튼이 유동적으로 너비 조절 */
+                flex: 1 1 auto;
                 margin: 5px;
-                padding: 8px 10px;
-                font-size: 0.9em;
+                padding: 10px 12px;
+                font-size: 1em;
             }
             .tab-content {
-                padding: 15px;
+                padding: 20px;
             }
         }
 
@@ -159,50 +219,51 @@
         .tabs {
             display: flex;
             justify-content: center;
-            margin-bottom: 20px;
+            margin-bottom: 30px; /* 마진 증가 */
             background-color: #3a404a;
-            border-radius: 8px;
-            padding: 5px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            padding: 8px; /* 패딩 증가 */
+            border: 1px solid #4b525f; /* 테두리 추가 */
         }
         .tab-button {
-            background-color: #3a404a;
-            color: #abb2bf;
+            background-color: #4b525f; /* 탭 버튼 배경 */
+            color: #e0e0e0;
             border: none;
-            padding: 10px 20px;
+            padding: 12px 25px; /* 패딩 증가 */
             cursor: pointer;
-            font-size: 1em;
-            transition: background-color 0.3s ease, color 0.3s ease;
-            border-radius: 5px;
-            margin: 0 5px;
+            font-size: 1.05em; /* 폰트 크기 증가 */
+            transition: all 0.3s ease; /* 전환 효과 추가 */
+            margin: 0 8px; /* 마진 증가 */
         }
         .tab-button:hover {
-            background-color: #4b525f;
+            background-color: #5c6370;
+            transform: translateY(-2px); /* 호버 시 약간 위로 이동 */
         }
         .tab-button.active {
-            background-color: #61afef;
+            background-color: #61afef; /* 활성 탭 강조색 */
             color: white;
+            transform: translateY(-1px); /* 활성 탭 약간 위로 이동 */
         }
         .tab-content {
             display: none;
-            padding: 20px;
+            padding: 30px; /* 패딩 증가 */
             background-color: #3a404a;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             max-width: 900px;
             width: 100%;
             box-sizing: border-box;
+            border: 1px solid #4b525f;
         }
         .tab-content h1, .tab-content h2 {
             color: #61afef;
             margin-top: 0;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
         }
         .tab-content ul {
             list-style-type: disc;
-            margin-left: 20px;
+            margin-left: 25px; /* 마진 증가 */
+            line-height: 1.6;
         }
         .tab-content li {
-            margin-bottom: 5px;
+            margin-bottom: 8px; /* 마진 증가 */
         }
 
 
@@ -452,11 +513,25 @@ self.onmessage = function(e) {
             evt.currentTarget.className += " active";
         }
 
-        // 초기 로드 시 '프랙탈 체험' 탭 활성화
+        // 캔버스 크기 동적 설정 함수
+        function setCanvasSize() {
+            const containerWidth = canvas.parentElement.clientWidth;
+            const newWidth = Math.min(800, containerWidth * 0.95); // 최대 800px, 컨테이너 너비의 95%
+            const newHeight = newWidth * (600 / 800); // 4:3 비율 유지
+            canvas.width = newWidth;
+            canvas.height = newHeight;
+            drawFractal();
+        }
+
+        // 초기 로드 시 '프랙탈 체험' 탭 활성화 및 캔버스 크기 설정
         document.addEventListener('DOMContentLoaded', (event) => {
             document.querySelector('.tab-button').click();
-            updateControls(); // 이 부분을 DOMContentLoaded 안으로 이동
+            setCanvasSize(); // 캔버스 크기 설정 호출
+            updateControls();
         });
+
+        // 윈도우 크기 변경 시 캔버스 크기 재설정
+        window.addEventListener('resize', setCanvasSize);
 
         const canvas = document.getElementById('fractalCanvas');
         const ctx = canvas.getContext('2d');
@@ -725,118 +800,154 @@ self.onmessage = function(e) {
                         <div>
                             <label for="treeDepth">깊이:</label>
                             <input type="range" id="treeDepth" min="1" max="10" value="${treeDepth}">
+                            <input type="number" id="treeDepthNum" min="1" max="10" value="${treeDepth}" style="width: 60px; margin-left: 10px;">
                         </div>
                         <div>
                             <label for="treeAngle">각도:</label>
                             <input type="range" id="treeAngle" min="0" max="90" value="${treeAngle}">
+                            <input type="number" id="treeAngleNum" min="0" max="90" value="${treeAngle}" style="width: 60px; margin-left: 10px;">
                         </div>
                         <div>
                             <label for="treeLengthRatio">확대 축소:</label>
                             <input type="range" id="treeLengthRatio" min="0.1" max="0.9" step="0.05" value="${treeLengthRatio}">
+                            <input type="number" id="treeLengthRatioNum" min="0.1" max="0.9" step="0.05" value="${treeLengthRatio}" style="width: 60px; margin-left: 10px;">
                         </div>
                     `;
-                    document.getElementById('treeDepth').addEventListener('input', (e) => { treeDepth = parseInt(e.target.value); drawFractal(); });
-                    document.getElementById('treeAngle').addEventListener('input', (e) => { treeAngle = parseInt(e.target.value); drawFractal(); });
-                    document.getElementById('treeLengthRatio').addEventListener('input', (e) => { treeLengthRatio = parseFloat(e.target.value); drawFractal(); });
+                    document.getElementById('treeDepth').addEventListener('input', (e) => { treeDepth = parseInt(e.target.value); document.getElementById('treeDepthNum').value = treeDepth; drawFractal(); });
+                    document.getElementById('treeDepthNum').addEventListener('change', (e) => { treeDepth = parseInt(e.target.value); document.getElementById('treeDepth').value = treeDepth; drawFractal(); });
+                    document.getElementById('treeAngle').addEventListener('input', (e) => { treeAngle = parseInt(e.target.value); document.getElementById('treeAngleNum').value = treeAngle; drawFractal(); });
+                    document.getElementById('treeAngleNum').addEventListener('change', (e) => { treeAngle = parseInt(e.target.value); document.getElementById('treeAngle').value = treeAngle; drawFractal(); });
+                    document.getElementById('treeLengthRatio').addEventListener('input', (e) => { treeLengthRatio = parseFloat(e.target.value); document.getElementById('treeLengthRatioNum').value = treeLengthRatio; drawFractal(); });
+                    document.getElementById('treeLengthRatioNum').addEventListener('change', (e) => { treeLengthRatio = parseFloat(e.target.value); document.getElementById('treeLengthRatio').value = treeLengthRatio; drawFractal(); });
                     break;
                 case 'sierpinski':
                     fractalControls.innerHTML = `
                         <div>
                             <label for="sierpinskiDepth">깊이:</label>
                             <input type="range" id="sierpinskiDepth" min="1" max="8" value="${sierpinskiDepth}">
+                            <input type="number" id="sierpinskiDepthNum" min="1" max="8" value="${sierpinskiDepth}" style="width: 60px; margin-left: 10px;">
                         </div>
                         <div>
                             <label for="sierpinskiZoom">확대 축소:</label>
                             <input type="range" id="sierpinskiZoom" min="0.1" max="5" step="0.1" value="${sierpinskiZoom}">
+                            <input type="number" id="sierpinskiZoomNum" min="0.1" max="5" step="0.1" value="${sierpinskiZoom}" style="width: 60px; margin-left: 10px;">
                         </div>
                     `;
-                    document.getElementById('sierpinskiDepth').addEventListener('input', (e) => { sierpinskiDepth = parseInt(e.target.value); drawFractal(); });
-                    document.getElementById('sierpinskiZoom').addEventListener('input', (e) => { sierpinskiZoom = parseFloat(e.target.value); drawFractal(); });
+                    document.getElementById('sierpinskiDepth').addEventListener('input', (e) => { sierpinskiDepth = parseInt(e.target.value); document.getElementById('sierpinskiDepthNum').value = sierpinskiDepth; drawFractal(); });
+                    document.getElementById('sierpinskiDepthNum').addEventListener('change', (e) => { sierpinskiDepth = parseInt(e.target.value); document.getElementById('sierpinskiDepth').value = sierpinskiDepth; drawFractal(); });
+                    document.getElementById('sierpinskiZoom').addEventListener('input', (e) => { sierpinskiZoom = parseFloat(e.target.value); document.getElementById('sierpinskiZoomNum').value = sierpinskiZoom; drawFractal(); });
+                    document.getElementById('sierpinskiZoomNum').addEventListener('change', (e) => { sierpinskiZoom = parseFloat(e.target.value); document.getElementById('sierpinskiZoom').value = sierpinskiZoom; drawFractal(); });
                     break;
                 case 'mandelbrot':
                     fractalControls.innerHTML = `
                         <div>
                             <label for="mandelbrotIterations">반복 횟수:</label>
                             <input type="range" id="mandelbrotIterations" min="10" max="200" value="${mandelbrotIterations}">
+                            <input type="number" id="mandelbrotIterationsNum" min="10" max="200" value="${mandelbrotIterations}" style="width: 60px; margin-left: 10px;">
                         </div>
                         <div>
                             <label for="mandelbrotZoom">확대:</label>
                             <input type="range" id="mandelbrotZoom" min="0.1" max="10" step="0.1" value="${mandelbrotZoom}">
+                            <input type="number" id="mandelbrotZoomNum" min="0.1" max="10" step="0.1" value="${mandelbrotZoom}" style="width: 60px; margin-left: 10px;">
                         </div>
                         <div>
                             <label for="mandelbrotCenterX">중심 X:</label>
                             <input type="range" id="mandelbrotCenterX" min="-2.5" max="1.5" step="0.01" value="${mandelbrotCenterX}">
+                            <input type="number" id="mandelbrotCenterXNum" min="-2.5" max="1.5" step="0.01" value="${mandelbrotCenterX}" style="width: 60px; margin-left: 10px;">
                         </div>
                         <div>
                             <label for="mandelbrotCenterY">중심 Y:</label>
                             <input type="range" id="mandelbrotCenterY" min="-2" max="2" step="0.01" value="${mandelbrotCenterY}">
+                            <input type="number" id="mandelbrotCenterYNum" min="-2" max="2" step="0.01" value="${mandelbrotCenterY}" style="width: 60px; margin-left: 10px;">
                         </div>
                         <div id="mandelbrotFormulaDisplay" style="margin-top: 10px; font-weight: bold;"></div>
                         <p style="font-size: 0.9em; color: #888; margin-top: 5px;">중심 X, Y는 만델브로트 집합을 그릴 복소평면의 중심 좌표입니다. 일반적으로 X는 -2.5에서 1.5, Y는 -2에서 2 사이의 값을 사용합니다.</p>
                     `;
-                    document.getElementById('mandelbrotIterations').addEventListener('input', (e) => { mandelbrotIterations = parseInt(e.target.value); drawFractal(); });
-                    document.getElementById('mandelbrotZoom').addEventListener('input', (e) => { mandelbrotZoom = parseFloat(e.target.value); drawFractal(); });
-                    document.getElementById('mandelbrotCenterX').addEventListener('input', (e) => { mandelbrotCenterX = parseFloat(e.target.value); drawFractal(); });
-                    document.getElementById('mandelbrotCenterY').addEventListener('input', (e) => { mandelbrotCenterY = parseFloat(e.target.value); drawFractal(); });
+                    document.getElementById('mandelbrotIterations').addEventListener('input', (e) => { mandelbrotIterations = parseInt(e.target.value); document.getElementById('mandelbrotIterationsNum').value = mandelbrotIterations; drawFractal(); });
+                    document.getElementById('mandelbrotIterationsNum').addEventListener('change', (e) => { mandelbrotIterations = parseInt(e.target.value); document.getElementById('mandelbrotIterations').value = mandelbrotIterations; drawFractal(); });
+                    document.getElementById('mandelbrotZoom').addEventListener('input', (e) => { mandelbrotZoom = parseFloat(e.target.value); document.getElementById('mandelbrotZoomNum').value = mandelbrotZoom; drawFractal(); });
+                    document.getElementById('mandelbrotZoomNum').addEventListener('change', (e) => { mandelbrotZoom = parseFloat(e.target.value); document.getElementById('mandelbrotZoom').value = mandelbrotZoom; drawFractal(); });
+                    document.getElementById('mandelbrotCenterX').addEventListener('input', (e) => { mandelbrotCenterX = parseFloat(e.target.value); document.getElementById('mandelbrotCenterXNum').value = mandelbrotCenterX; drawFractal(); });
+                    document.getElementById('mandelbrotCenterXNum').addEventListener('change', (e) => { mandelbrotCenterX = parseFloat(e.target.value); document.getElementById('mandelbrotCenterX').value = mandelbrotCenterX; drawFractal(); });
+                    document.getElementById('mandelbrotCenterY').addEventListener('input', (e) => { mandelbrotCenterY = parseFloat(e.target.value); document.getElementById('mandelbrotCenterYNum').value = mandelbrotCenterY; drawFractal(); });
+                    document.getElementById('mandelbrotCenterYNum').addEventListener('change', (e) => { mandelbrotCenterY = parseFloat(e.target.value); document.getElementById('mandelbrotCenterY').value = mandelbrotCenterY; drawFractal(); });
                     break;
                 case 'julia':
                     fractalControls.innerHTML = `
                         <div>
                             <label for="juliaIterations">반복 횟수:</label>
                             <input type="range" id="juliaIterations" min="10" max="200" value="${juliaIterations}">
+                            <input type="number" id="juliaIterationsNum" min="10" max="200" value="${juliaIterations}" style="width: 60px; margin-left: 10px;">
                         </div>
                         <div>
                             <label for="juliaZoom">확대:</label>
                             <input type="range" id="juliaZoom" min="0.1" max="10" step="0.1" value="${juliaZoom}">
+                            <input type="number" id="juliaZoomNum" min="0.1" max="10" step="0.1" value="${juliaZoom}" style="width: 60px; margin-left: 10px;">
                         </div>
                         <div>
                             <label for="juliaRealC">고정 c (실수부):</label>
                             <input type="range" id="juliaRealC" min="-2" max="2" step="0.001" value="${juliaRealC}">
+                            <input type="number" id="juliaRealCNum" min="-2" max="2" step="0.001" value="${juliaRealC}" style="width: 60px; margin-left: 10px;">
                         </div>
                         <div>
                             <label for="juliaImagC">고정 c (허수부):</label>
                             <input type="range" id="juliaImagC" min="-2" max="2" step="0.001" value="${juliaImagC}">
+                            <input type="number" id="juliaImagCNum" min="-2" max="2" step="0.001" value="${juliaImagC}" style="width: 60px; margin-left: 10px;">
                         </div>
                         <div id="juliaFormulaDisplay" style="margin-top: 10px; font-weight: bold;"></div>
                         <p style="font-size: 0.9em; color: #888; margin-top: 5px;">고정 c 값은 줄리아 집합의 형태를 결정하는 중요한 요소입니다. 일반적으로 실수부는 -2에서 2, 허수부는 -2에서 2 사이의 값을 사용합니다.</p>
                     `;
-                    document.getElementById('juliaIterations').addEventListener('input', (e) => { juliaIterations = parseInt(e.target.value); drawFractal(); });
-                    document.getElementById('juliaZoom').addEventListener('input', (e) => { juliaZoom = parseFloat(e.target.value); drawFractal(); });
-                    document.getElementById('juliaRealC').addEventListener('input', (e) => { juliaRealC = parseFloat(e.target.value); drawFractal(); });
-                    document.getElementById('juliaImagC').addEventListener('input', (e) => { juliaImagC = parseFloat(e.target.value); drawFractal(); });
+                    document.getElementById('juliaIterations').addEventListener('input', (e) => { juliaIterations = parseInt(e.target.value); document.getElementById('juliaIterationsNum').value = juliaIterations; drawFractal(); });
+                    document.getElementById('juliaIterationsNum').addEventListener('change', (e) => { juliaIterations = parseInt(e.target.value); document.getElementById('juliaIterations').value = juliaIterations; drawFractal(); });
+                    document.getElementById('juliaZoom').addEventListener('input', (e) => { juliaZoom = parseFloat(e.target.value); document.getElementById('juliaZoomNum').value = juliaZoom; drawFractal(); });
+                    document.getElementById('juliaZoomNum').addEventListener('change', (e) => { juliaZoom = parseFloat(e.target.value); document.getElementById('juliaZoom').value = juliaZoom; drawFractal(); });
+                    document.getElementById('juliaRealC').addEventListener('input', (e) => { juliaRealC = parseFloat(e.target.value); document.getElementById('juliaRealCNum').value = juliaRealC; drawFractal(); });
+                    document.getElementById('juliaRealCNum').addEventListener('change', (e) => { juliaRealC = parseFloat(e.target.value); document.getElementById('juliaRealC').value = juliaRealC; drawFractal(); });
+                    document.getElementById('juliaImagC').addEventListener('input', (e) => { juliaImagC = parseFloat(e.target.value); document.getElementById('juliaImagCNum').value = juliaImagC; drawFractal(); });
+                    document.getElementById('juliaImagCNum').addEventListener('change', (e) => { juliaImagC = parseFloat(e.target.value); document.getElementById('juliaImagC').value = juliaImagC; drawFractal(); });
                     break;
                 case 'koch':
                     fractalControls.innerHTML = `
                         <div>
                             <label for="kochDepth">깊이:</label>
                             <input type="range" id="kochDepth" min="0" max="6" value="${kochDepth}">
+                            <input type="number" id="kochDepthNum" min="0" max="6" value="${kochDepth}" style="width: 60px; margin-left: 10px;">
                         </div>
                         <div>
                             <label for="kochZoom">확대 축소:</label>
                             <input type="range" id="kochZoom" min="0.1" max="5" step="0.1" value="${kochZoom}">
+                            <input type="number" id="kochZoomNum" min="0.1" max="5" step="0.1" value="${kochZoom}" style="width: 60px; margin-left: 10px;">
                         </div>
                     `;
-                    document.getElementById('kochDepth').addEventListener('input', (e) => { kochDepth = parseInt(e.target.value); drawFractal(); });
-                    document.getElementById('kochZoom').addEventListener('input', (e) => { kochZoom = parseFloat(e.target.value); drawFractal(); });
+                    document.getElementById('kochDepth').addEventListener('input', (e) => { kochDepth = parseInt(e.target.value); document.getElementById('kochDepthNum').value = kochDepth; drawFractal(); });
+                    document.getElementById('kochDepthNum').addEventListener('change', (e) => { kochDepth = parseInt(e.target.value); document.getElementById('kochDepth').value = kochDepth; drawFractal(); });
+                    document.getElementById('kochZoom').addEventListener('input', (e) => { kochZoom = parseFloat(e.target.value); document.getElementById('kochZoomNum').value = kochZoom; drawFractal(); });
+                    document.getElementById('kochZoomNum').addEventListener('change', (e) => { kochZoom = parseFloat(e.target.value); document.getElementById('kochZoom').value = kochZoom; drawFractal(); });
                     break;
                 case 'pythagoras':
                     fractalControls.innerHTML = `
                         <div>
                             <label for="pythagorasDepth">깊이:</label>
                             <input type="range" id="pythagorasDepth" min="1" max="10" value="${pythagorasDepth}">
+                            <input type="number" id="pythagorasDepthNum" min="1" max="10" value="${pythagorasDepth}" style="width: 60px; margin-left: 10px;">
                         </div>
                         <div>
                             <label for="pythagorasAngle">각도:</label>
                             <input type="range" id="pythagorasAngle" min="1" max="89" value="${pythagorasAngle}">
+                            <input type="number" id="pythagorasAngleNum" min="1" max="89" value="${pythagorasAngle}" style="width: 60px; margin-left: 10px;">
                         </div>
                         <div>
                             <label for="pythagorasZoom">확대 축소:</label>
                             <input type="range" id="pythagorasZoom" min="0.1" max="5" step="0.1" value="${pythagorasZoom}">
+                            <input type="number" id="pythagorasZoomNum" min="0.1" max="5" step="0.1" value="${pythagorasZoom}" style="width: 60px; margin-left: 10px;">
                         </div>
                     `;
-                    document.getElementById('pythagorasDepth').addEventListener('input', (e) => { pythagorasDepth = parseInt(e.target.value); drawFractal(); });
-                    document.getElementById('pythagorasAngle').addEventListener('input', (e) => { pythagorasAngle = parseInt(e.target.value); drawFractal(); });
-                    document.getElementById('pythagorasZoom').addEventListener('input', (e) => { pythagorasZoom = parseFloat(e.target.value); drawFractal(); });
+                    document.getElementById('pythagorasDepth').addEventListener('input', (e) => { pythagorasDepth = parseInt(e.target.value); document.getElementById('pythagorasDepthNum').value = pythagorasDepth; drawFractal(); });
+                    document.getElementById('pythagorasDepthNum').addEventListener('change', (e) => { pythagorasDepth = parseInt(e.target.value); document.getElementById('pythagorasDepth').value = pythagorasDepth; drawFractal(); });
+                    document.getElementById('pythagorasAngle').addEventListener('input', (e) => { pythagorasAngle = parseInt(e.target.value); document.getElementById('pythagorasAngleNum').value = pythagorasAngle; drawFractal(); });
+                    document.getElementById('pythagorasAngleNum').addEventListener('change', (e) => { pythagorasAngle = parseInt(e.target.value); document.getElementById('pythagorasAngle').value = pythagorasAngle; drawFractal(); });
+                    document.getElementById('pythagorasZoom').addEventListener('input', (e) => { pythagorasZoom = parseFloat(e.target.value); document.getElementById('pythagorasZoomNum').value = pythagorasZoom; drawFractal(); });
+                    document.getElementById('pythagorasZoomNum').addEventListener('change', (e) => { pythagorasZoom = parseFloat(e.target.value); document.getElementById('pythagorasZoom').value = pythagorasZoom; drawFractal(); });
                     break;
                 case 'dragon':
                     // 깊이 컨트롤
@@ -850,10 +961,21 @@ self.onmessage = function(e) {
                     depthInput.setAttribute('min', '1');
                     depthInput.setAttribute('max', '20');
                     depthInput.setAttribute('value', dragonDepth);
-                    depthInput.addEventListener('input', (e) => { dragonDepth = parseInt(e.target.value); drawFractal(); });
+                    depthInput.addEventListener('input', (e) => { dragonDepth = parseInt(e.target.value); document.getElementById('dragonDepthNum').value = dragonDepth; drawFractal(); });
                     depthDiv.appendChild(depthLabel);
                     depthDiv.appendChild(depthInput);
                     fractalControls.appendChild(depthDiv);
+
+                    let depthNumInput = document.createElement('input');
+                    depthNumInput.setAttribute('type', 'number');
+                    depthNumInput.setAttribute('id', 'dragonDepthNum');
+                    depthNumInput.setAttribute('min', '1');
+                    depthNumInput.setAttribute('max', '20');
+                    depthNumInput.setAttribute('value', dragonDepth);
+                    depthNumInput.style.width = '60px';
+                    depthNumInput.style.marginLeft = '10px';
+                    depthNumInput.addEventListener('change', (e) => { dragonDepth = parseInt(e.target.value); document.getElementById('dragonDepth').value = dragonDepth; drawFractal(); });
+                    depthDiv.appendChild(depthNumInput);
 
                     // 확대 축소 컨트롤
                     let zoomDiv = document.createElement('div');
@@ -867,10 +989,22 @@ self.onmessage = function(e) {
                     zoomInput.setAttribute('max', '5');
                     zoomInput.setAttribute('step', '0.1');
                     zoomInput.setAttribute('value', dragonZoom);
-                    zoomInput.addEventListener('input', (e) => { dragonZoom = parseFloat(e.target.value); drawFractal(); });
+                    zoomInput.addEventListener('input', (e) => { dragonZoom = parseFloat(e.target.value); document.getElementById('dragonZoomNum').value = dragonZoom; drawFractal(); });
                     zoomDiv.appendChild(zoomLabel);
                     zoomDiv.appendChild(zoomInput);
                     fractalControls.appendChild(zoomDiv);
+
+                    let zoomNumInput = document.createElement('input');
+                    zoomNumInput.setAttribute('type', 'number');
+                    zoomNumInput.setAttribute('id', 'dragonZoomNum');
+                    zoomNumInput.setAttribute('min', '0.1');
+                    zoomNumInput.setAttribute('max', '5');
+                    zoomNumInput.setAttribute('step', '0.1');
+                    zoomNumInput.setAttribute('value', dragonZoom);
+                    zoomNumInput.style.width = '60px';
+                    zoomNumInput.style.marginLeft = '10px';
+                    zoomNumInput.addEventListener('change', (e) => { dragonZoom = parseFloat(e.target.value); document.getElementById('dragonZoom').value = dragonZoom; drawFractal(); });
+                    zoomDiv.appendChild(zoomNumInput);
                     break;
             }
             drawFractal();
@@ -1000,5 +1134,8 @@ self.onmessage = function(e) {
         canvas.addEventListener('touchend', () => { isDragging = false; initialPinchDistance = null; });
         canvas.addEventListener('touchcancel', () => { isDragging = false; initialPinchDistance = null; });
     </script>
+    <footer style="margin-top: 40px; font-size: 0.85em; color: #9da5b4; text-align: center;">
+        <p>&copy; 2025 아저씨 사랑해요. All rights reserved.</p>
+    </footer>
 </body>
 </html>
